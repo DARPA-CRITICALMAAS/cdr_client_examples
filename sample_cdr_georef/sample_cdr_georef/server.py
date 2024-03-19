@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import atexit
 import hashlib
@@ -25,6 +26,12 @@ from pyproj import Transformer
 from rasterio.warp import Resampling, calculate_default_transform, reproject
 
 Image.MAX_IMAGE_PIXELS = None
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("mode")
+parser.add_argument("--cog_id")
+args = parser.parse_args()
 
 
 class Settings(BaseSettings):
@@ -312,5 +319,9 @@ def register_system():
 
 
 if __name__ == "__main__":
-    register_system()
-    run()
+    if args.mode == 'host':
+        register_system()
+        run()
+    if args.mode == 'process':
+        asyncio.run(georeference_map(
+            {"cog_id": args.cog_id, "cog_url": f"https://s3.amazonaws.com/public.cdr.land/cogs/{args.cog_id}.cog.tif"}))
