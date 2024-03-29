@@ -16,6 +16,7 @@ import uvicorn.logging
 from cdr_schemas.events import Event, MapEventPayload
 from cdr_schemas.georeference import (GeoreferenceResult, GeoreferenceResults,
                                       ProjectionResult)
+from cdr_schemas.feature_results import FeatureResults
 from fastapi import (BackgroundTasks, Depends, FastAPI, HTTPException, Request,
                      status)
 from fastapi.security import APIKeyHeader
@@ -72,8 +73,7 @@ def clean_up():
     # delete our registered system at CDR on program end
     headers = {'Authorization': f'Bearer {app_settings.user_api_token}'}
     client = httpx.Client(follow_redirects=True)
-    client.delete(f"{app_settings.cdr_host}/user/me/register/{
-                  app_settings.registration_id}", headers=headers)
+    client.delete(f"{app_settings.cdr_host}/user/me/register/{app_settings.registration_id}", headers=headers)
 
 
 # register clean_up
@@ -237,6 +237,92 @@ async def georeference_map(req: MapEventPayload,  response_model=GeoreferenceRes
     return results
 
 
+def dummy_feature_results():
+    polygon_feature_1 = {
+        "id": "1712",
+        "crs": "EPSG:4326",
+        "map_unit": 11,
+        "abbreviation": '',
+        "description": '',
+        "pattern": 'solid',
+        "color": '#dfa566',
+        "category": '',
+        "polygon_features": [
+            {
+                "features": [
+                {
+                    "id": "polygon_feature_1",
+                    "geometry": {
+                        "coordinates": [[[(-92.3368977795084, 47.96525347233585), (-92.3368977795084, 47.96520426896563), (-92.33684857613818, 47.96520426896563), (-92.33684857613818, 47.96525347233585), (-92.3368977795084, 47.96525347233585)]]]
+                    },
+                    "properties": {}
+                }
+                ]
+            },
+        ]
+    }
+
+    polygon_feature_2 = {
+        "id": "1713",
+        "crs": "EPSG:4326",
+        "map_unit": 11,
+        "abbreviation": '',
+        "description": '',
+        "pattern": 'solid',
+        "color": '#dfa566',
+        "category": '',
+        "polygon_features": [
+            {
+                "features": [
+                {
+                    "id": "polygon_feature_1",
+                    "geometry": {
+                        "coordinates": [[[(-92.01008899446106, 47.944981683802354), (-92.01008899446106, 47.94493248043213), (-92.01003979109083, 47.94493248043213), (-92.01003979109083, 47.944981683802354), (-92.01008899446106, 47.944981683802354)]]]
+                    },
+                    "properties": {}
+                }
+                ]
+            },
+        ]
+    }
+
+    feature_payload = FeatureResults(
+        cog_id="6657_9294",
+        polygon_feature_results=[polygon_feature_1, polygon_feature_2],
+        system=app_settings.system_name,
+        system_version=app_settings.system_version
+    )
+
+    return feature_payload
+
+
+async def post_feature_results():
+
+    payload = dummy_feature_results()
+    
+    print("Sending Feature to CDR...")
+    headers = {'Authorization': f'Bearer {app_settings.user_api_token}'}
+    client = httpx.Client(follow_redirects=True)
+    resp = client.post(f"{app_settings.cdr_host}/v1/maps/publish/features",
+                       data=payload.model_dump_json(), headers=headers)
+    print("Posted Features to CDR!")
+
+
+async def get_feature_result(id: str):
+    headers = {'Authorization': f'Bearer {app_settings.user_api_token}'}
+    client = httpx.Client(follow_redirects=True)
+    resp = client.get(f"{app_settings.cdr_host}/v1/maps/extractions/{id}",
+                      headers=headers)
+    return resp.json()
+
+async def get_georef_result(id: str):
+    headers= {'Authorization': f'Bearer {app_settings.user_api_token}'}
+    client = httpx.Client(follow_redirects=True)
+    resp = client.get(f"{app_settings.cdr_host}/v1/maps/georef/{id}",
+                      headers=headers)
+    return resp.json()
+
+
 async def event_handler(evt: Event):
     try:
         match evt:
@@ -245,6 +331,16 @@ async def event_handler(evt: Event):
             case Event(event="map.process"):
                 print("Received MAP!")
                 await georeference_map(evt.payload)
+            case Event(event="feature.process"):
+                print("Received FEATURE!")
+                print(evt.payload)
+                feature = await get_feature_result(evt.payload["id"])
+                print(f"Got feature from event: {feature}")
+            case Event(event="georef.process"):
+                print("Received GEOREF!")
+                print(evt.payload)
+                georef = await get_georef_result(evt.payload["id"])
+                print(f"Got georef from event: {georef}")
             case _:
                 print("Nothing to do for event: %s", evt)
 
@@ -325,3 +421,4 @@ if __name__ == "__main__":
     if args.mode == 'process':
         asyncio.run(georeference_map(
             {"cog_id": args.cog_id, "cog_url": f"https://s3.amazonaws.com/public.cdr.land/cogs/{args.cog_id}.cog.tif"}))
+        asyncio.run(post_feature_results())
