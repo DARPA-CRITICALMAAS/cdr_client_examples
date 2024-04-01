@@ -365,9 +365,11 @@ async def get_georef_result(id: str):
 async def get_all_extraction_results(cog_id: str):
     headers = {'Authorization': f'Bearer {app_settings.user_api_token}'}
     client = httpx.Client(follow_redirects=True)
-    resp = client.get(f"{app_settings.cdr_host}/v1/maps/cog_id/{cog_id}/results",
+    resp = client.get(f"{app_settings.cdr_host}/v1/maps/cog/{cog_id}/results",
                       headers=headers)
-    return resp.json()
+    result_json = resp.json()
+    print(f"Got all extraction results! {result_json}")
+    return result_json
 
 
 async def event_handler(evt: Event):
