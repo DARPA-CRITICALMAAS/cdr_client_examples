@@ -16,6 +16,7 @@ import uvicorn.logging
 from cdr_schemas.events import Event, MapEventPayload
 from cdr_schemas.georeference import (GeoreferenceResult, GeoreferenceResults,
                                       ProjectionResult)
+from cdr_schemas.feature_results import FeatureResults
 from fastapi import (BackgroundTasks, Depends, FastAPI, HTTPException, Request,
                      status)
 from fastapi.security import APIKeyHeader
@@ -72,8 +73,7 @@ def clean_up():
     # delete our registered system at CDR on program end
     headers = {'Authorization': f'Bearer {app_settings.user_api_token}'}
     client = httpx.Client(follow_redirects=True)
-    client.delete(f"{app_settings.cdr_host}/user/me/register/{
-                  app_settings.registration_id}", headers=headers)
+    client.delete(f"{app_settings.cdr_host}/user/me/register/{app_settings.registration_id}", headers=headers)
 
 
 # register clean_up
@@ -121,10 +121,10 @@ def project_(raw_path, pro_cog_path, geo_transform, crs):
 def cps_to_transform(cps, height, to_crs):
     cps = [
         {
-            "row": height - float(cp["px_geom"]["coordinates"][1]),
-            "col": float(cp["px_geom"]["coordinates"][0]),
-            "x": float(cp["map_geom"]["coordinates"][1]),
-            "y": float(cp["map_geom"]["coordinates"][0]),
+            "row": height - float(cp["px_geom"]["rows_from_top"]),
+            "col": float(cp["px_geom"]["columns_from_left"]),
+            "x": float(cp["map_geom"]["longitude"]),
+            "y": float(cp["map_geom"]["latitude"]),
             "crs": cp["crs"],
         }
         for cp in cps
@@ -163,11 +163,13 @@ def dummy_GCPs():
                 "gcp_id": str(uuid.uuid4()),
                 "map_geom": {
                     "type": "Point",
-                    "coordinates": [x[0], x[1]]
+                    "longitude":x[0],
+                    "latitude": x[1]
                 },
                 "px_geom": {
                     "type": "Point",
-                    "coordinates": [locs[i][0], locs[i][1]]
+                    "rows_from_top": locs[i][1],
+                    "columns_from_left": locs[i][0]
                 },
                 "confidence": None,
                 "model": app_settings.ml_model_name,
@@ -192,7 +194,7 @@ def dummy_georeference_result(gcps, cog_id):
     gcp_ids = list(map(lambda x: x["gcp_id"], gcps))
     pr = ProjectionResult(crs="EPSG:4267", gcp_ids=gcp_ids,
                           file_name=proj_file_name)
-    gr = GeoreferenceResult(likely_CRSs=["EPSG:4267"], projections=[pr])
+    gr = GeoreferenceResult(likely_CRSs=["EPSG:4267"], map_area= None, projections=[pr])
     return gr
 
     # project the image
@@ -206,9 +208,10 @@ async def georeference_map(req: MapEventPayload,  response_model=GeoreferenceRes
 
     # Download .cog
     print("Downloading...")
-    r = httpx.get(cog_url, timeout=1000)
-    with open(f"{cog_id}.cog.tif", "wb") as f:
-        f.write(r.content)
+    if not os.path.exists(f"{cog_id}.cog.tif"):
+        r = httpx.get(cog_url, timeout=1000)
+        with open(f"{cog_id}.cog.tif", "wb") as f:
+            f.write(r.content)
 
     print("Creating georef result...")
     gcps = dummy_GCPs()
@@ -237,6 +240,138 @@ async def georeference_map(req: MapEventPayload,  response_model=GeoreferenceRes
     return results
 
 
+def dummy_feature_results(cog_id):
+    polygon_feature_1 = {
+        "id": "1712",
+        "crs": "EPSG:4326",
+        "cdr_projection_id": None,
+        "map_unit": {
+            "age_text": None,
+            "b_age": None,
+            "b_interval": None,
+            "lithology": None,
+            "name": None,
+            "t_age": None,
+            "t_interval": None,
+            "comments": None
+        },
+        "abbreviation": '',
+        "legend_bbox": None,
+        "description": '',
+        "pattern": 'solid',
+        "color": '#dfa566',
+        "category": '',
+        "polygon_features":{
+            "features": [
+            {
+                "id": "polygon_feature_1",
+                "geometry": {
+                "coordinates": [[[-92.3368977795084, 47.96525347233585], [-92.3368977795084, 47.96520426896563], [-92.33684857613818, 47.96520426896563], [-92.33684857613818, 47.96525347233585], [-92.3368977795084, 47.96525347233585]]]
+                },
+                "properties": {
+                    "model": None,
+                    "model_version": None,
+                    "confidence": None,
+                }
+            }
+            ]
+        }
+    }
+
+    polygon_feature_2 = {
+        "id": "1713",
+        "crs": "EPSG:4326",
+        "cdr_projection_id": None,
+        "map_unit": {
+            "age_text": None,
+            "b_age": None,
+            "b_interval": None,
+            "lithology": None,
+            "name": None,
+            "t_age": None,
+            "t_interval": None,
+            "comments": None
+        },
+        "abbreviation": '',
+        "legend_bbox": None,
+        "description": '',
+        "pattern": 'solid',
+        "color": '#dfa566',
+        "category": '',
+        "polygon_features": {
+            "features": [
+            {
+                "id": "polygon_feature_1",
+                "geometry": {
+                    "coordinates": [[[-92.01008899446106, 47.944981683802354], [-92.01008899446106, 47.94493248043213], [-92.01003979109083, 47.94493248043213], [-92.01003979109083, 47.944981683802354], [-92.01008899446106, 47.944981683802354]]]
+                },
+                "properties": {
+                    "model": None,
+                    "model_version": None,
+                    "confidence": None,
+                }
+            }
+            ]
+        }
+    }
+
+    feature_payload = FeatureResults(
+        cog_id=cog_id,
+        polygon_feature_results=[polygon_feature_1, polygon_feature_2],
+        line_feature_results=[],
+        point_feature_results=[],
+        cog_area_extractions=[],
+        cog_metadata_extractions=[],
+        system=app_settings.system_name,
+        system_version=app_settings.system_version
+    )
+
+    return feature_payload
+
+
+async def post_feature_results(cog_id: str, cog_url: str):
+
+    # Download .cog
+    print("Downloading...")
+    if not os.path.exists(f"{cog_id}.cog.tif"):
+        r = httpx.get(cog_url, timeout=1000)
+        with open(f"{cog_id}.cog.tif", "wb") as f:
+            f.write(r.content)
+
+    payload = dummy_feature_results(cog_id)
+    
+    print("Sending Feature to CDR...")
+    headers = {'Authorization': f'Bearer {app_settings.user_api_token}'}
+    client = httpx.Client(follow_redirects=True)
+    resp = client.post(f"{app_settings.cdr_host}/v1/maps/publish/features",
+                       data=payload.model_dump_json(), headers=headers)
+    print("Posted Features to CDR!")
+
+
+async def get_feature_result(id: str):
+    headers = {'Authorization': f'Bearer {app_settings.user_api_token}'}
+    client = httpx.Client(follow_redirects=True)
+    resp = client.get(f"{app_settings.cdr_host}/v1/maps/extractions/{id}",
+                      headers=headers)
+    return resp.json()
+
+async def get_georef_result(id: str):
+    headers= {'Authorization': f'Bearer {app_settings.user_api_token}'}
+    client = httpx.Client(follow_redirects=True)
+    resp = client.get(f"{app_settings.cdr_host}/v1/maps/georef/{id}",
+                      headers=headers)
+    return resp.json()
+
+async def get_all_extraction_results(cog_id: str):
+    headers = {'Authorization': f'Bearer {app_settings.user_api_token}'}
+    client = httpx.Client(follow_redirects=True)
+    resp = client.get(f"{app_settings.cdr_host}/v1/maps/cog/{cog_id}/results",
+                      headers=headers)
+    result_json = resp.json()
+    print(f"Got all extraction results! {result_json}")
+    return result_json
+
+
 async def event_handler(evt: Event):
     try:
         match evt:
@@ -245,6 +380,16 @@ async def event_handler(evt: Event):
             case Event(event="map.process"):
                 print("Received MAP!")
                 await georeference_map(evt.payload)
+            case Event(event="feature.process"):
+                print("Received FEATURE!")
+                print(evt.payload)
+                feature = await get_feature_result(evt.payload["id"])
+                print(f"Got feature from event: {feature}")
+            case Event(event="georef.process"):
+                print("Received GEOREF!")
+                print(evt.payload)
+                georef = await get_georef_result(evt.payload["id"])
+                print(f"Got georef from event: {georef}")
             case _:
                 print("Nothing to do for event: %s", evt)
 
@@ -325,3 +470,5 @@ if __name__ == "__main__":
     if args.mode == 'process':
         asyncio.run(georeference_map(
             {"cog_id": args.cog_id, "cog_url": f"https://s3.amazonaws.com/public.cdr.land/cogs/{args.cog_id}.cog.tif"}))
+        asyncio.run(post_feature_results(cog_id=args.cog_id, cog_url=f"https://s3.amazonaws.com/public.cdr.land/cogs/{args.cog_id}.cog.tif"))
+        asyncio.run(get_all_extraction_results(cog_id=args.cog_id))
