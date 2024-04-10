@@ -233,7 +233,7 @@ async def georeference_map(req: MapEventPayload,  response_model=GeoreferenceRes
     headers = {'Authorization': f'Bearer {app_settings.user_api_token}'}
     client = httpx.Client(follow_redirects=True)
     resp = client.post(f"{app_settings.cdr_host}/v1/maps/publish/georef",
-                       data={"georef_result": results.model_dump_json()}, files=files_, headers=headers)
+                       data={"georef_result": results.model_dump_json(exclude_none=True)}, files=files_, headers=headers)
     print("Done!")
     os.remove(result.projections[0].file_name)
     os.remove(f"{cog_id}.cog.tif")
