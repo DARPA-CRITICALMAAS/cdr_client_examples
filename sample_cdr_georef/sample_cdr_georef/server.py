@@ -73,7 +73,8 @@ def clean_up():
     # delete our registered system at CDR on program end
     headers = {'Authorization': f'Bearer {app_settings.user_api_token}'}
     client = httpx.Client(follow_redirects=True)
-    client.delete(f"{app_settings.cdr_host}/user/me/register/{app_settings.registration_id}", headers=headers)
+    client.delete(f"{app_settings.cdr_host}/user/me/register/{
+                  app_settings.registration_id}", headers=headers)
 
 
 # register clean_up
@@ -163,7 +164,7 @@ def dummy_GCPs():
                 "gcp_id": str(uuid.uuid4()),
                 "map_geom": {
                     "type": "Point",
-                    "longitude":x[0],
+                    "longitude": x[0],
                     "latitude": x[1]
                 },
                 "px_geom": {
@@ -194,7 +195,8 @@ def dummy_georeference_result(gcps, cog_id):
     gcp_ids = list(map(lambda x: x["gcp_id"], gcps))
     pr = ProjectionResult(crs="EPSG:4267", gcp_ids=gcp_ids,
                           file_name=proj_file_name)
-    gr = GeoreferenceResult(likely_CRSs=["EPSG:4267"], map_area= None, projections=[pr])
+    gr = GeoreferenceResult(
+        likely_CRSs=["EPSG:4267"], map_area=None, projections=[pr])
     return gr
 
     # project the image
@@ -244,36 +246,37 @@ def dummy_feature_results(cog_id):
     polygon_feature_1 = {
         "id": "1712",
         "crs": "EPSG:4326",
-        "cdr_projection_id": None,
+        "cdr_projection_id": "",
         "map_unit": {
-            "age_text": None,
+            "age_text": "",
             "b_age": None,
-            "b_interval": None,
-            "lithology": None,
-            "name": None,
+            "b_interval": "",
+            "lithology": "",
+            "name": "",
             "t_age": None,
-            "t_interval": None,
-            "comments": None
+            "t_interval": "",
+            "comments": ""
         },
         "abbreviation": '',
-        "legend_bbox": None,
+        "label": '',
+        "legend_bbox": [0, 0, 0, 0],
         "description": '',
         "pattern": 'solid',
         "color": '#dfa566',
         "category": '',
-        "polygon_features":{
+        "polygon_features": {
             "features": [
-            {
-                "id": "polygon_feature_1",
-                "geometry": {
-                "coordinates": [[[-92.3368977795084, 47.96525347233585], [-92.3368977795084, 47.96520426896563], [-92.33684857613818, 47.96520426896563], [-92.33684857613818, 47.96525347233585], [-92.3368977795084, 47.96525347233585]]]
-                },
-                "properties": {
-                    "model": None,
-                    "model_version": None,
-                    "confidence": None,
+                {
+                    "id": "polygon_feature_1",
+                    "geometry": {
+                        "coordinates": [[[-92.3368977795084, 47.96525347233585], [-92.3368977795084, 47.96520426896563], [-92.33684857613818, 47.96520426896563], [-92.33684857613818, 47.96525347233585], [-92.3368977795084, 47.96525347233585]]]
+                    },
+                    "properties": {
+                        "model": "",
+                        "model_version": "None",
+                        "confidence": .5,
+                    }
                 }
-            }
             ]
         }
     }
@@ -281,36 +284,37 @@ def dummy_feature_results(cog_id):
     polygon_feature_2 = {
         "id": "1713",
         "crs": "EPSG:4326",
-        "cdr_projection_id": None,
+        "cdr_projection_id": "",
         "map_unit": {
-            "age_text": None,
+            "age_text": "",
             "b_age": None,
-            "b_interval": None,
-            "lithology": None,
-            "name": None,
+            "b_interval": "",
+            "lithology": "",
+            "name": "",
             "t_age": None,
-            "t_interval": None,
-            "comments": None
+            "t_interval": "",
+            "comments": ""
         },
         "abbreviation": '',
-        "legend_bbox": None,
+        "label": '',
+        "legend_bbox": [0, 0, 0, 0],
         "description": '',
         "pattern": 'solid',
         "color": '#dfa566',
         "category": '',
         "polygon_features": {
             "features": [
-            {
-                "id": "polygon_feature_1",
-                "geometry": {
-                    "coordinates": [[[-92.01008899446106, 47.944981683802354], [-92.01008899446106, 47.94493248043213], [-92.01003979109083, 47.94493248043213], [-92.01003979109083, 47.944981683802354], [-92.01008899446106, 47.944981683802354]]]
-                },
-                "properties": {
-                    "model": None,
-                    "model_version": None,
-                    "confidence": None,
+                {
+                    "id": "polygon_feature_1",
+                    "geometry": {
+                        "coordinates": [[[-92.01008899446106, 47.944981683802354], [-92.01008899446106, 47.94493248043213], [-92.01003979109083, 47.94493248043213], [-92.01003979109083, 47.944981683802354], [-92.01008899446106, 47.944981683802354]]]
+                    },
+                    "properties": {
+                        "model": "",
+                        "model_version": "None",
+                        "confidence": .5,
+                    }
                 }
-            }
             ]
         }
     }
@@ -339,7 +343,7 @@ async def post_feature_results(cog_id: str, cog_url: str):
             f.write(r.content)
 
     payload = dummy_feature_results(cog_id)
-    
+
     print("Sending Feature to CDR...")
     headers = {'Authorization': f'Bearer {app_settings.user_api_token}'}
     client = httpx.Client(follow_redirects=True)
@@ -355,12 +359,14 @@ async def get_feature_result(id: str):
                       headers=headers)
     return resp.json()
 
+
 async def get_georef_result(id: str):
-    headers= {'Authorization': f'Bearer {app_settings.user_api_token}'}
+    headers = {'Authorization': f'Bearer {app_settings.user_api_token}'}
     client = httpx.Client(follow_redirects=True)
     resp = client.get(f"{app_settings.cdr_host}/v1/maps/georef/{id}",
                       headers=headers)
     return resp.json()
+
 
 async def get_all_extraction_results(cog_id: str):
     headers = {'Authorization': f'Bearer {app_settings.user_api_token}'}
@@ -379,14 +385,15 @@ async def event_handler(evt: Event):
                 print("Received PING!")
             case Event(event="map.process"):
                 print("Received MAP!")
+                await post_feature_results(cog_id=evt.payload['cog_id'], cog_url=f"https://s3.amazonaws.com/public.cdr.land/cogs/{evt.payload['cog_id']}.cog.tif")
                 await georeference_map(evt.payload)
             case Event(event="feature.process"):
-                print("Received FEATURE!")
+                print("Received FEATURE Result!")
                 print(evt.payload)
                 feature = await get_feature_result(evt.payload["id"])
                 print(f"Got feature from event: {feature}")
             case Event(event="georef.process"):
-                print("Received GEOREF!")
+                print("Received GEOREF Result!")
                 print(evt.payload)
                 georef = await get_georef_result(evt.payload["id"])
                 print(f"Got georef from event: {georef}")
@@ -433,7 +440,7 @@ async def hook(
 def run():
     """Run our web hook"""
     uvicorn.run("__main__:app", host="0.0.0.0",
-                port=app_settings.local_port, reload=True)
+                port=app_settings.local_port, reload=False)
 
 
 def register_system():
@@ -470,5 +477,6 @@ if __name__ == "__main__":
     if args.mode == 'process':
         asyncio.run(georeference_map(
             {"cog_id": args.cog_id, "cog_url": f"https://s3.amazonaws.com/public.cdr.land/cogs/{args.cog_id}.cog.tif"}))
-        asyncio.run(post_feature_results(cog_id=args.cog_id, cog_url=f"https://s3.amazonaws.com/public.cdr.land/cogs/{args.cog_id}.cog.tif"))
+        asyncio.run(post_feature_results(cog_id=args.cog_id,
+                    cog_url=f"https://s3.amazonaws.com/public.cdr.land/cogs/{args.cog_id}.cog.tif"))
         asyncio.run(get_all_extraction_results(cog_id=args.cog_id))
