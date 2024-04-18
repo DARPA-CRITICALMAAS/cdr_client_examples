@@ -354,7 +354,7 @@ async def post_feature_results(cog_id: str, cog_url: str):
 
 async def get_feature_result(id: str):
     headers = {'Authorization': f'Bearer {app_settings.user_api_token}'}
-    client = httpx.Client(follow_redirects=True)
+    client = httpx.Client(follow_redirects=True, timeout=None)
     resp = client.get(f"{app_settings.cdr_host}/v1/maps/extractions/{id}",
                       headers=headers)
     return resp.json()
@@ -362,7 +362,7 @@ async def get_feature_result(id: str):
 
 async def get_georef_result(id: str):
     headers = {'Authorization': f'Bearer {app_settings.user_api_token}'}
-    client = httpx.Client(follow_redirects=True)
+    client = httpx.Client(follow_redirects=True, timeout=None)
     resp = client.get(f"{app_settings.cdr_host}/v1/maps/georef/{id}",
                       headers=headers)
     return resp.json()
@@ -370,7 +370,7 @@ async def get_georef_result(id: str):
 
 async def get_all_extraction_results(cog_id: str):
     headers = {'Authorization': f'Bearer {app_settings.user_api_token}'}
-    client = httpx.Client(follow_redirects=True)
+    client = httpx.Client(follow_redirects=True, timeout=None)
     resp = client.get(f"{app_settings.cdr_host}/v1/maps/cog/{cog_id}/results",
                       headers=headers)
     result_json = resp.json()
