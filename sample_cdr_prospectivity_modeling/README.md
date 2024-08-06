@@ -25,7 +25,7 @@ This sample uses ngrok (https://dashboard.ngrok.com/signup) to obtain and use a 
 
 #### Host as webhook, received prospectivity_model_run.process events from CDR and process as received (integration)
 
-`NGROK_AUTHTOKEN=<YOUR_NGROK_TOKEN> CDR_API_TOKEN=<YOUR_CDR_TOKEN> poetry run python sample_cdr_prospectivity_modeling/server.py host`
+`NGROK_AUTHTOKEN=<YOUR_NGROK_TOKEN> CDR_API_TOKEN=<YOUR_CDR_TOKEN> poetry run python sample_cdr_prospectivity_modeling/server.py`
 
 #### Process single model run event based on event_id (to be found via CDR/TA4).
 

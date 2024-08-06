@@ -104,7 +104,7 @@ def send_outputs(payload, app_settings):
                         },
                         files=files_,
                         headers=headers)
-    if resp.status_code != 204:
+    if resp.status_code != 200 or resp.status_code != 204:
         print("An Error Occurred sending uncertainty layer")
         print(resp.text)
     else:
@@ -133,7 +133,7 @@ def send_outputs(payload, app_settings):
                 },
             files=files_,
             headers=headers)
-    if resp.status_code != 204:
+    if resp.status_code != 200 or resp.status_code != 204:
         print("An Error Occurred sending likelihood layer")
         print(resp.text)
     else:
@@ -169,7 +169,7 @@ def send_stack(payload, app_settings):
             files=files_,
             headers=headers
             )
-        if resp.status_code != 204:
+        if resp.status_code != 200 or resp.status_code != 204:
             print("An Error Occurred sending input layer")
             print(resp.text)
         else:

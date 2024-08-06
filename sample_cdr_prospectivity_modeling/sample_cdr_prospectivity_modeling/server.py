@@ -17,6 +17,7 @@ from fastapi import (BackgroundTasks, Depends, FastAPI, HTTPException, Request,
 from common import run_ta3_pipeline
 
 from pydantic_settings import BaseSettings
+from cdr_schemas.cdr_responses.prospectivity import ProspectModelMetaData
 
 
 
@@ -84,7 +85,14 @@ async def event_handler(evt: Event):
             case Event(event="prospectivity_model_run.process"):
                 print("Received model run event payload!")
                 print(evt.payload)
-                run_ta3_pipeline(evt.payload, app_settings)
+                run_ta3_pipeline(
+                    ProspectModelMetaData(
+                        model_run_id = evt.payload.get("model_run_id"),
+                        cma = evt.payload.get("cma"),
+                        model_type = evt.payload.get("model_type"),
+                        train_config = evt.payload.get("train_config"),
+                        evidence_layers = evt.payload.get("evidence_layers"),
+                        ), app_settings)
             case _:
                 print("Nothing to do for event: %s", evt)
 
