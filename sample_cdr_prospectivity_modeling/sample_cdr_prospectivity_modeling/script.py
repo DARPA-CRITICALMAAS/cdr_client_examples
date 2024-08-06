@@ -20,22 +20,13 @@ class Settings(BaseSettings):
     ml_model_name: str = "xcorp_prospectivity_model"
     ml_model_version: str = "0.0.1"
 
-    # Local port to run on
-    local_port: int = 9999
-    # To be filled in programmatically via ngrok below.
-    callback_url: str = ""
-    # Secret string used for signature verification on callback.  Changed by TA3-4 system.
-    registration_secret: str = "mysecret"
 
     # To be provided to TA3-4 system by CDR admin
     user_api_token: str = os.environ["CDR_API_TOKEN"]
     cdr_host: str = "https://api.cdr.land"
     admin_cdr_host: str = "https://admin.cdr.land"
-    # cdr_host: str = "http://0.0.0.0:8333"
-    # admin_cdr_host: str = "http://0.0.0.0:3333"
-
-    # To be filled in programmatically after registration process below.  Needed to remove registration.
-    registration_id: str = ""
+    cdr_host: str = "http://0.0.0.0:8333"
+    admin_cdr_host: str = "http://0.0.0.0:3333"
 
     class Config:
         case_sensitive = False
@@ -48,7 +39,7 @@ app_settings = Settings()
 
 
 if __name__ == "__main__":
-    # make sure folders are created
+    # make sure folders are created locally
     datasources_path = Path('./datasources')
     if not datasources_path.exists():
         datasources_path.mkdir(parents=True, exist_ok=True)

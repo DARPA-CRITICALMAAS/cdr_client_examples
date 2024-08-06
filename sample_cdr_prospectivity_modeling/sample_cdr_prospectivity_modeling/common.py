@@ -77,10 +77,10 @@ def run_model(payload):
 
 
 def send_outputs(payload, app_settings):
-    print("Sending Output layerss to CDR...")
+    print("Sending Output layers to CDR...")
 
     #  send output layers from model run
-    #  output layer metadata
+    #  create output layer metadata
     results = ProspectivityOutputLayer(**{
         "system": app_settings.system_name,
         "system_version": app_settings.system_version,
@@ -100,10 +100,10 @@ def send_outputs(payload, app_settings):
 
     resp = client.post(f"{app_settings.cdr_host}/v1/prospectivity/propectivity_output_layer",
                        data={
-                           "metadata": results.model_dump_json(exclude_none=True)
-                           },
-                            files=files_,
-                            headers=headers)
+                        "metadata": results.model_dump_json(exclude_none=True)
+                        },
+                        files=files_,
+                        headers=headers)
     if resp.status_code != 204:
         print("An Error Occurred sending uncertainty layer")
         print(resp.text)
@@ -131,8 +131,8 @@ def send_outputs(payload, app_settings):
             data={
                 "metadata": result_2.model_dump_json(exclude_none=True)
                 },
-                files=files_,
-                headers=headers)
+            files=files_,
+            headers=headers)
     if resp.status_code != 204:
         print("An Error Occurred sending likelihood layer")
         print(resp.text)
