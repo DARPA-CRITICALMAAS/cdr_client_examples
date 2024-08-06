@@ -25,8 +25,8 @@ class Settings(BaseSettings):
     user_api_token: str = os.environ["CDR_API_TOKEN"]
     cdr_host: str = "https://api.cdr.land"
     admin_cdr_host: str = "https://admin.cdr.land"
-    cdr_host: str = "http://0.0.0.0:8333"
-    admin_cdr_host: str = "http://0.0.0.0:3333"
+    # cdr_host: str = "http://0.0.0.0:8333"
+    # admin_cdr_host: str = "http://0.0.0.0:3333"
 
     class Config:
         case_sensitive = False

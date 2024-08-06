@@ -42,8 +42,10 @@ class Settings(BaseSettings):
     # To be provided to TA3-4 system by CDR admin
     user_api_token: str = os.environ["CDR_API_TOKEN"]
     cdr_host: str = "https://api.cdr.land"
-    cdr_host: str = "http://0.0.0.0:8333"
-    admin_cdr_host: str = "http://0.0.0.0:3333"
+    admin_cdr_host: str = "https://admin.cdr.land"
+    # For local development
+    # cdr_host: str = "http://0.0.0.0:8333"
+    # admin_cdr_host: str = "http://0.0.0.0:3333"
 
 
     # To be filled in programmatically after registration process below.  Needed to remove registration.
