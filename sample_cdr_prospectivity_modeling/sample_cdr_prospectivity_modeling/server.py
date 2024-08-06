@@ -14,14 +14,13 @@ import uvicorn.logging
 from cdr_schemas.events import Event
 from fastapi import (BackgroundTasks, Depends, FastAPI, HTTPException, Request,
                      status)
-from .common import run_ta3_pipeline
+from common import run_ta3_pipeline
 
 from pydantic_settings import BaseSettings
 
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("mode")
 args = parser.parse_args()
 
 
