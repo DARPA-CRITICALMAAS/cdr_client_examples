@@ -21,6 +21,11 @@ This sample uses ngrok (https://dashboard.ngrok.com/signup) to obtain and use a 
 
 `poetry install`
 
-#### Host as webhook, received document.process events from CDR and spits out event information. Add business logic as needed.
 
-`NGROK_AUTHTOKEN=<YOUR_NGROK_TOKEN> CDR_API_TOKEN=<YOUR_CDR_TOKEN> poetry run python sample_cdr_document_subscriber/server.py`
+If you want to add any packages use `poetry add <package>`
+
+#### Host as webhook, received document.process events from CDR and spits out event information. Add business logic as needed.
+Steps:
+0. Set in .env: NGROK_AUTHTOKEN=<YOUR_NGROK_TOKEN> CDR_API_TOKEN=<YOUR_CDR_TOKEN> 
+1. Activate venv: `poetry shell`
+2.`poetry run python sample_cdr_document_subscriber/server.py`
