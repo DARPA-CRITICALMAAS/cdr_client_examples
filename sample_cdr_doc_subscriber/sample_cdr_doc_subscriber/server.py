@@ -29,7 +29,7 @@ load_dotenv(dotenv_path)
 
 minmod_api=API('inferlink','inferlink37@')
 minmod_api.login()
-print(minmod_api.whoami())
+print("Logged into minmod API: ",minmod_api.whoami())
 
 parser = argparse.ArgumentParser()
 args = parser.parse_args()
@@ -101,7 +101,7 @@ async def event_handler(evt: Event):
                 download_dir = "/home/ubuntu/cdr_client_examples/sample_cdr_doc_subscriber/sample_cdr_doc_subscriber/downloaded_reports/"
                 output_folder_path = "/home/ubuntu/cdr_client_examples/sample_cdr_doc_subscriber/sample_cdr_doc_subscriber/finished_extractions/"
                 file_name = helper.download_document(record_id, download_dir)
-                print("Finished Downloading")
+                print(f"Finished Downloading: {file_name}")
                 
                 if file_name is not None:
                     print(f"Going to start extracting: {file_name}")
@@ -131,7 +131,9 @@ async def event_handler(evt: Event):
                     #             print(f"{filename} is not a file, skipping.")
                     # except Exception as e:
                     #     print(f"Error deleting files in {output_folder_path}: {e}")
-                                                
+                    
+                else:
+                    print("Did not extract file")                               
                 
             case _:
                 print("Nothing to do for event: %s", evt)
