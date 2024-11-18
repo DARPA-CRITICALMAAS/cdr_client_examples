@@ -107,6 +107,7 @@ async def event_handler(evt: Event):
                     print(f"Going to start extracting: {file_name}")
                     json_output = extract.run(download_dir, file_name, output_folder_path)
                     try: 
+                        json_output[0]['record_id'] = "Testing Output to API Server"
                         print(minmod_api.create_site(json_output[0]))
                         print("Finished posting to the API!")
                     except Exception as e:
