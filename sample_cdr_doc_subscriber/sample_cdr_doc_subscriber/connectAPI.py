@@ -13,7 +13,7 @@ class API:
         endpoint = f"{self.endpoint}/mineral-sites"
         params=site_record
         response = httpx.post(endpoint,json=params,cookies=self.cookies)
-        print(response.json())
+        # print(response.json())
         response.raise_for_status()
         return response.json()
     
@@ -21,7 +21,11 @@ class API:
         endpoint = f"{self.endpoint}/mineral-sites/make-id"
         params={'source_id':"mining-report::https://api.cdr.land/v1/docs/documents",'record_id':cdr_id}
         response = requests.get(endpoint,params=params,cookies=self.cookies)
-        print(response.json())
+        if response.status_code != 200:
+            raise Exception(f"ERROR: get status code {response.status_code}. Reason: {response.text}")
+        else:
+            print("Status Code 200: Posted to API")
+        # print(response.json())
         response.raise_for_status()
         return response.json()
     
