@@ -87,6 +87,7 @@ app = FastAPI()
 
 
 async def event_handler(evt: Event):
+    print("Getting the event")
     try:
         match evt:
             case Event(event="ping"):
@@ -106,8 +107,10 @@ async def event_handler(evt: Event):
                 if file_name is not None:
                     print(f"Going to start extracting: {file_name}")
                     json_output = extract.run(download_dir, file_name, output_folder_path)
+                    print("Completed Extraction")
                     try: 
-                        json_output[0]['record_id'] = "Testing Output to API Server"
+                        og_id = json_output[0]['record_id']
+                        json_output[0]['record_id'] = f"API SERVER DEMO: {og_id}"
                         print(minmod_api.create_site(json_output[0]))
                         print("Finished posting to the API!")
                     except Exception as e:
@@ -186,7 +189,7 @@ def register_system():
     """Register our system to the CDR using the app_settings"""
     global app_settings
     headers = {'Authorization': f'Bearer {app_settings.user_api_token}'}
-
+    # print(headers)
     registration = {
         "name": app_settings.system_name,
         "version": app_settings.system_version,
@@ -206,9 +209,11 @@ def register_system():
                     json=registration, headers=headers)
 
     # Log our registration_id such we can delete it when we close the program.
+    print(f"register system r: {r}")
     app_settings.registration_id = r.json()["id"]
 
 
 if __name__ == "__main__":
+    ## Only have to register your system once
     register_system()
     run()
