@@ -35,6 +35,7 @@ parser = argparse.ArgumentParser()
 args = parser.parse_args()
 
 
+
 class Settings(BaseSettings):
     # TO BE CHANGED BY TA3-4 system.
     system_name: str = "xcorp_my_doc_system"
@@ -99,10 +100,17 @@ async def event_handler(evt: Event):
                 download_link = f"https://docs.polymer.rocks/cdr/download/{document.id}"
                 print(download_link)
                 record_id = document.id
+                print(f"Looking at record_id: {record_id}")
+                ifexists,_ = minmod_api.check_existence(record_id)
+                
+                print(f"Record ID: exists in CDR: {ifexists}")
                 download_dir = "/home/ubuntu/cdr_client_examples/sample_cdr_doc_subscriber/sample_cdr_doc_subscriber/downloaded_reports/"
                 output_folder_path = "/home/ubuntu/cdr_client_examples/sample_cdr_doc_subscriber/sample_cdr_doc_subscriber/finished_extractions/"
-                file_name = helper.download_document(record_id, download_dir)
-                print(f"Finished Downloading: {file_name}")
+                file_name = None
+                
+                if not ifexists:
+                    file_name = helper.download_document(record_id, download_dir)
+                    print(f"Finished Downloading: {file_name}")
                 
                 if file_name is not None:
                     print(f"Going to start extracting: {file_name}")
@@ -207,7 +215,7 @@ def register_system():
 
     r = client.post(f"{app_settings.cdr_host}/user/me/register",
                     json=registration, headers=headers)
-
+    
     # Log our registration_id such we can delete it when we close the program.
     print(f"register system r: {r}")
     app_settings.registration_id = r.json()["id"]
