@@ -5,6 +5,7 @@ import hmac
 import os
 from fastapi.security import APIKeyHeader
 import httpx
+import datetime as date
 import ngrok
 import uvicorn
 import uvicorn.logging
@@ -27,14 +28,12 @@ dotenv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), './.env'))
 # Load the .env file
 load_dotenv(dotenv_path)
 
-minmod_api=API('inferlink','inferlink37@')
+minmod_api=API('inferlink','ncUm1Y^Wy')
 minmod_api.login()
 print("Logged into minmod API: ",minmod_api.whoami())
 
 parser = argparse.ArgumentParser()
 args = parser.parse_args()
-
-
 
 class Settings(BaseSettings):
     # TO BE CHANGED BY TA3-4 system.
@@ -45,6 +44,8 @@ class Settings(BaseSettings):
 
     # Local port to run on
     local_port: int = 9999
+    cdr_api_token: str
+    ngrok_authtoken: str
     # To be filled in programmatically via ngrok below.
     callback_url: str = ""
     # Secret string used for signature verification on callback.  Changed by TA3-4 system.
@@ -66,8 +67,9 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
 
-
+print("Creating app_settings")
 app_settings = Settings()
+print("app_settings was created")
 
 # Get ngrok to give us an endpoint
 listener = ngrok.forward(app_settings.local_port, authtoken_from_env=True)
@@ -83,12 +85,11 @@ def clean_up():
 
 # register clean_up
 atexit.register(clean_up)
-
 app = FastAPI()
 
 
 async def event_handler(evt: Event):
-    print("Getting the event")
+    print(f"Getting the event at: {date.datetime.now()}")
     try:
         match evt:
             case Event(event="ping"):
@@ -119,30 +120,30 @@ async def event_handler(evt: Event):
                     try: 
                         og_id = json_output[0]['record_id']
                         json_output[0]['record_id'] = f"API SERVER DEMO: {og_id}"
-                        print(minmod_api.create_site(json_output[0]))
+                        print(minmod_api.update_site_safe(og_id, json_output[0]))
                         print("Finished posting to the API!")
                     except Exception as e:
                         print(f"Had some sort of error: {e}")
                     
                     
-                    # download_file_path = os.path.join(download_dir, file_name)
+                    download_file_path = os.path.join(download_dir, file_name)
                     
-                    # if os.path.exists(download_file_path):
-                    #     try:
-                    #         os.remove(download_file_path)
-                    #     except:
-                    #         print("Couldn't delete file")
+                    if os.path.exists(download_file_path):
+                        try:
+                            os.remove(download_file_path)
+                        except:
+                            print("Couldn't delete file")
                             
-                    # try:
-                    #     for filename in os.listdir(output_folder_path):
-                    #         file_path = os.path.join(output_folder_path, filename)
-                    #         if os.path.isfile(file_path):
-                    #             os.remove(file_path)
-                    #             print(f"Successfully deleted {filename} from {output_folder_path}")
-                    #         else:
-                    #             print(f"{filename} is not a file, skipping.")
-                    # except Exception as e:
-                    #     print(f"Error deleting files in {output_folder_path}: {e}")
+                    try:
+                        for filename in os.listdir(output_folder_path):
+                            file_path = os.path.join(output_folder_path, filename)
+                            if os.path.isfile(file_path):
+                                os.remove(file_path)
+                                print(f"Successfully deleted {filename} from {output_folder_path}")
+                            else:
+                                print(f"{filename} is not a file, skipping.")
+                    except Exception as e:
+                        print(f"Error deleting files in {output_folder_path}: {e}")
                     
                 else:
                     print("Did not extract file")                               

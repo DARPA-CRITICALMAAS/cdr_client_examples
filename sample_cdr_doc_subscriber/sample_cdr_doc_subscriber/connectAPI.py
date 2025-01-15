@@ -98,3 +98,84 @@ class API:
         boolean, message = self._get_mineral_site_details(response)
 
         return boolean, message
+    
+    def create_site(self,site_record):
+        endpoint = f"{self.endpoint}/mineral-sites"
+        params=site_record
+        response = httpx.post(endpoint,json=params,cookies=self.cookies,timeout=None)
+        if json.dumps(response.json()).find('exists')>=0:
+            print(response.json())
+            return {}
+        
+        response.raise_for_status()
+        print(response.json())
+        return response.json()
+    
+    def update_site(self,cdr_id,site_record):
+        site_id=self.get_id(cdr_id)
+        
+        endpoint = f"{self.endpoint}/mineral-sites/{site_id}"
+        response = httpx.put(endpoint,json=site_record,cookies=self.cookies,timeout=None)
+        
+        print(response.json())
+        response.raise_for_status()
+        return response.json()
+    
+    def get_id(self,cdr_id):
+        endpoint = f"{self.endpoint}/mineral-sites/make-id"
+        params={'source_id':"mining-report::https://api.cdr.land/v1/docs/documents",'record_id':cdr_id}
+        response = requests.get(endpoint,params=params,cookies=self.cookies,timeout=None)
+        #print(response.json())
+        response.raise_for_status()
+        url=response.json()
+        id=url.split('/')[-1]
+        return id
+    
+    def get_site(self,cdr_id):
+        site_id=self.get_id(cdr_id)
+        
+        endpoint = f"{self.endpoint}/mineral-sites/{site_id}"
+        response = httpx.get(endpoint,cookies=self.cookies,timeout=None) #params=params,
+        if json.dumps(response.json()).find('does not exist')>=0:
+            print(response.json())
+            return {}
+        
+        response.raise_for_status() 
+        return response.json()
+    
+    def merge(self,old_record,new_record):
+        #override everything except for deposit_type_candidate and created_by
+        merged_record=copy.deepcopy(old_record)
+        for k in new_record:
+            #ignore empty items
+            if new_record[k] is None:
+                continue
+            
+            if k=='deposit_type_candidate':
+                if not k in merged_record:
+                    merged_record[k]=new_record[k]
+                else:
+                    merged_record[k]+=new_record[k]
+                
+                #Remove identical records to prevent pollution
+                deposit_type_predictions=merged_record[k]
+                deposit_type_predictions={json.dumps(x):x for x in deposit_type_predictions}
+                deposit_type_predictions=[deposit_type_predictions[x] for x in deposit_type_predictions]
+                merged_record[k]=deposit_type_predictions
+            elif k=='created_by':
+                pass
+            else:
+                merged_record[k]=new_record[k]
+        
+        return merged_record
+    
+    def update_site_safe(self,cdr_id,site_record):
+        #Get site
+        result=self.create_site(site_record)
+        if len(result)==0:
+            old_record=self.get_site(cdr_id)
+            new_record=self.merge(old_record,site_record)
+            result=self.update_site(cdr_id,new_record)
+        
+        #response.raise_for_status()
+        return result
