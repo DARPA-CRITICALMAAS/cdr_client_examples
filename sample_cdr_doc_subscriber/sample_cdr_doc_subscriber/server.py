@@ -16,9 +16,9 @@ from pydantic_settings import BaseSettings
 from connectAPI import API
 from cdr_schemas.document import Document
 import sys
-sys.path.append(os.path.abspath('/home/ubuntu/ta2_extraction'))
+sys.path.append(os.path.abspath('/home/ubuntu/ta2-extraction'))
 
-import first_pass.HelperFunctions as helper
+import extraction_package.genericFunctions as generic
 import extraction_package.pipeline as extract 
 from dotenv import load_dotenv
 
@@ -27,7 +27,7 @@ dotenv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), './.env'))
 
 # Load the .env file
 load_dotenv(dotenv_path)
-
+print("Trying to log in")
 minmod_api=API('inferlink','ncUm1Y^Wy')
 minmod_api.login()
 print("Logged into minmod API: ",minmod_api.whoami())
@@ -100,54 +100,62 @@ async def event_handler(evt: Event):
                 document = Document(**evt.payload)
                 download_link = f"https://docs.polymer.rocks/cdr/download/{document.id}"
                 print(download_link)
-                record_id = document.id
-                print(f"Looking at record_id: {record_id}")
-                ifexists,_ = minmod_api.check_existence(record_id)
+                count, belowLimit = API.increment()
                 
-                print(f"Record ID: exists in CDR: {ifexists}")
-                download_dir = "/home/ubuntu/cdr_client_examples/sample_cdr_doc_subscriber/sample_cdr_doc_subscriber/downloaded_reports/"
-                output_folder_path = "/home/ubuntu/cdr_client_examples/sample_cdr_doc_subscriber/sample_cdr_doc_subscriber/finished_extractions/"
-                file_name = None
-                
-                if not ifexists:
-                    file_name = helper.download_document(record_id, download_dir)
-                    print(f"Finished Downloading: {file_name}")
-                
-                if file_name is not None:
-                    print(f"Going to start extracting: {file_name}")
-                    json_output = extract.run(download_dir, file_name, output_folder_path)
-                    print("Completed Extraction")
-                    try: 
-                        og_id = json_output[0]['record_id']
-                        json_output[0]['record_id'] = f"API SERVER DEMO: {og_id}"
-                        print(minmod_api.update_site_safe(og_id, json_output[0]))
-                        print("Finished posting to the API!")
-                    except Exception as e:
-                        print(f"Had some sort of error: {e}")
-                    
-                    
-                    download_file_path = os.path.join(download_dir, file_name)
-                    
-                    if os.path.exists(download_file_path):
-                        try:
-                            os.remove(download_file_path)
-                        except:
-                            print("Couldn't delete file")
-                            
-                    try:
-                        for filename in os.listdir(output_folder_path):
-                            file_path = os.path.join(output_folder_path, filename)
-                            if os.path.isfile(file_path):
-                                os.remove(file_path)
-                                print(f"Successfully deleted {filename} from {output_folder_path}")
-                            else:
-                                print(f"{filename} is not a file, skipping.")
-                    except Exception as e:
-                        print(f"Error deleting files in {output_folder_path}: {e}")
+                if not belowLimit:
+                    print("Passed the limit cannot extract anymore")
                     
                 else:
-                    print("Did not extract file")                               
+                    print("Have not yet hit daily limit yet. Can extract")
                 
+                    record_id = document.id
+                    print(f"Looking at record_id: {record_id}")
+                    ifexists,_ = minmod_api.check_existence(record_id)
+                    
+                    print(f"Record ID: exists in CDR: {ifexists}")
+                    download_dir = "/home/ubuntu/cdr_client_examples/sample_cdr_doc_subscriber/sample_cdr_doc_subscriber/downloaded_reports/"
+                    output_folder_path = "/home/ubuntu/cdr_client_examples/sample_cdr_doc_subscriber/sample_cdr_doc_subscriber/finished_extractions/"
+                    file_name = None
+                    
+                    if not ifexists:
+                        file_name = generic.download_document(record_id, download_dir)
+                        print(f"Finished Downloading: {file_name}")
+                    
+                    if file_name is not None:
+                        print(f"Going to start extracting: {file_name}")
+                        json_output = extract.run(download_dir, file_name, output_folder_path)
+                        print("Completed Extraction")
+                        try: 
+                            og_id = json_output[0]['record_id']
+                            json_output[0]['record_id'] = f"API SERVER DEMO: {og_id}"
+                            print(minmod_api.update_site_safe(og_id, json_output[0]))
+                            print("Finished posting to the API!")
+                        except Exception as e:
+                            print(f"Had some sort of error: {e}")
+                        
+                        
+                        download_file_path = os.path.join(download_dir, file_name)
+                        
+                        if os.path.exists(download_file_path):
+                            try:
+                                os.remove(download_file_path)
+                            except:
+                                print("Couldn't delete file")
+                                
+                        try:
+                            for filename in os.listdir(output_folder_path):
+                                file_path = os.path.join(output_folder_path, filename)
+                                if os.path.isfile(file_path):
+                                    os.remove(file_path)
+                                    print(f"Successfully deleted {filename} from {output_folder_path}")
+                                else:
+                                    print(f"{filename} is not a file, skipping.")
+                        except Exception as e:
+                            print(f"Error deleting files in {output_folder_path}: {e}")
+                        
+                    else:
+                        print("Did not extract file")                               
+                    
             case _:
                 print("Nothing to do for event: %s", evt)
 
