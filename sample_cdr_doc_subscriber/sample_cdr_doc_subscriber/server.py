@@ -28,7 +28,7 @@ dotenv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), './.env'))
 # Load the .env file
 load_dotenv(dotenv_path)
 print("Trying to log in")
-minmod_api=API('inferlink','ncUm1Y^Wy')
+minmod_api=API('inferlink','ncUm1Y^Wy', 100)
 minmod_api.login()
 print("Logged into minmod API: ",minmod_api.whoami())
 
@@ -100,17 +100,13 @@ async def event_handler(evt: Event):
                 document = Document(**evt.payload)
                 download_link = f"https://docs.polymer.rocks/cdr/download/{document.id}"
                 print(download_link)
-                count, belowLimit = API.increment()
+                count, belowLimit = minmod_api.increment()
                 
-                if not belowLimit:
-                    print("Passed the limit cannot extract anymore")
                     
-                else:
-                    print("Have not yet hit daily limit yet. Can extract")
-                
+                if belowLimit:                
                     record_id = document.id
-                    print(f"Looking at record_id: {record_id}")
-                    ifexists,_ = minmod_api.check_existence(record_id)
+                    # print(f"Looking at record_id: {record_id}")
+                    ifexists = minmod_api.has_site(record_id)
                     
                     print(f"Record ID: exists in CDR: {ifexists}")
                     download_dir = "/home/ubuntu/cdr_client_examples/sample_cdr_doc_subscriber/sample_cdr_doc_subscriber/downloaded_reports/"
@@ -124,12 +120,10 @@ async def event_handler(evt: Event):
                     if file_name is not None:
                         print(f"Going to start extracting: {file_name}")
                         json_output = extract.run(download_dir, file_name, output_folder_path)
-                        print("Completed Extraction")
+                        # print("Completed Extraction")
                         try: 
-                            og_id = json_output[0]['record_id']
-                            json_output[0]['record_id'] = f"API SERVER DEMO: {og_id}"
-                            print(minmod_api.update_site_safe(og_id, json_output[0]))
-                            print("Finished posting to the API!")
+                            print(minmod_api.upsert_mineral_site(json_output))
+                            # print("Finished posting to the API!")
                         except Exception as e:
                             print(f"Had some sort of error: {e}")
                         
@@ -147,9 +141,7 @@ async def event_handler(evt: Event):
                                 file_path = os.path.join(output_folder_path, filename)
                                 if os.path.isfile(file_path):
                                     os.remove(file_path)
-                                    print(f"Successfully deleted {filename} from {output_folder_path}")
-                                else:
-                                    print(f"{filename} is not a file, skipping.")
+                                    # print(f"Successfully deleted {filename} from {output_folder_path}")
                         except Exception as e:
                             print(f"Error deleting files in {output_folder_path}: {e}")
                         
@@ -216,7 +208,7 @@ def register_system():
         "auth_header": "",
         "auth_token": "",
         # Registers for ALL events
-        "events": []
+        "events": ["document.process", "ping"]
 
     }
 
